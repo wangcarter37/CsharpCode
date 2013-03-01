@@ -1,0 +1,104 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Forms;
+using System.IO;
+
+namespace UploadApp
+{
+  /// <summary>
+  /// Interaction logic for MainWindow.xaml
+  /// </summary>
+  public partial class MainWindow : Window
+  {
+    public MainWindow()
+    {
+      InitializeComponent();
+    }
+
+    private void Browse_Click(object sender, RoutedEventArgs e)
+    {
+      var dialog = new System.Windows.Forms.OpenFileDialog();
+      dialog.InitialDirectory = "D:\\G01S02\\OOD";
+      System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+      listBox1.Items.Insert(0, dialog.FileName);
+    }
+
+    private void Upload_Click(object sender, RoutedEventArgs e)
+    {
+      ServiceReference1.IService1 svc = new ServiceReference1.Service1Client();
+      if (listBox1.Items.Count != 0)
+      {
+          foreach (var item in listBox1.Items)
+          {
+              string file = item.ToString();
+              string uploadname = null;
+              int index = file.LastIndexOf(@"\");
+              string directory = file.Substring(0, index + 1);
+              string filename = file.Substring(index + 1, file.Length - index - 1);
+              string wikiname = "D:\\G01S02\\IP\\FinalProject\\FinalProject\\FinalProject\\Wiki.txt";
+              StreamReader srd = new StreamReader(wikiname);
+              string filecontent = srd.ReadToEnd();
+              srd.Close();
+              filecontent = filecontent + "\rUpload: " + filename + " " + DateTime.Now.ToLocalTime().ToString()+"\n";
+              using (StreamWriter swr = File.CreateText(wikiname))
+              {
+                  swr.WriteLine(filecontent);
+                  swr.Close();
+              }
+
+              if (!string.IsNullOrWhiteSpace(textBox1.Text))
+                  uploadname = textBox1.Text.ToString() + "_" + filename;
+              else
+                  uploadname = filename;
+              if (svc.OpenFileForWrite(uploadname))
+              {
+                  FileStream fs = null;
+                  try
+                  {
+                      string fqname = System.IO.Path.Combine(directory, filename);
+                      fs = File.Open(fqname, FileMode.Open);
+                      int bytesRead;
+                      while (true)
+                      {
+                          long BlockSize = 10240;
+                          long remainder = (int)(fs.Length - fs.Position);
+                          if (remainder == 0)
+                              break;
+                          long size = Math.Min(BlockSize, remainder);
+                          byte[] block = new byte[size];
+                          bytesRead = fs.Read(block, 0, block.Length);
+                          svc.WriteBlock(block);
+                      }
+                      fs.Close();
+                      svc.CloseFile();
+                  }
+                  catch
+                  {
+                      if (fs != null)
+                          fs.Close();
+                      return;
+                  }
+              }
+          }
+
+      }
+
+    }
+
+    private void Clear_Click(object sender, RoutedEventArgs e)
+    {
+      listBox1.Items.Clear();
+    }
+  }
+}

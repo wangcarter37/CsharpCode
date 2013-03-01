@@ -1,0 +1,76 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Forms;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.IO;
+
+namespace Annotation
+{
+  /// <summary>
+  /// Interaction logic for MainWindow.xaml
+  /// </summary>
+  public partial class MainWindow : Window
+  {
+    public MainWindow()
+    {
+      InitializeComponent();
+    }
+
+    private void List_Click(object sender, RoutedEventArgs e)
+    {
+        string[] files = Directory.GetFiles("D:\\G01S02\\IP\\FinalProject\\FinalProject\\FinalProject\\Files\\");
+      foreach (string file in files)
+        listBox1.Items.Insert(0, file);
+    }
+
+    private void Select_Click(object sender, RoutedEventArgs e)
+    {
+      if (listBox1.SelectedItem != null)
+      {
+        string s = listBox1.SelectedItem.ToString();
+        StreamReader srd = new StreamReader(s);
+        string filecontent = srd.ReadToEnd();
+        textBox1.Text = filecontent;
+        textBox2.Text = s;
+        srd.Close();
+      }
+    }
+
+    private void Finish_Click(object sender, RoutedEventArgs e)
+    {
+      string file = textBox2.Text;
+      string content = textBox1.Text;
+      int index = file.LastIndexOf(@"\");
+      string filename = file.Substring(index + 1, file.Length - index - 1);
+      if (!string.IsNullOrWhiteSpace(textBox2.Text))
+      {
+        using (StreamWriter sw = File.CreateText(file))
+        {
+          sw.WriteLine(content);
+          sw.Close();
+        }
+      }
+
+      string wikiname = "D:\\G01S02\\IP\\FinalProject\\FinalProject\\FinalProject\\Wiki.txt";
+      StreamReader srd = new StreamReader(wikiname);
+      string filecontent = srd.ReadToEnd();
+      srd.Close();
+      filecontent = filecontent + "\rAnnotation: " + filename + " " +DateTime.Now.ToLocalTime().ToString()+"\n";
+      using (StreamWriter swr = File.CreateText(wikiname))
+      {
+        swr.WriteLine(filecontent);
+        swr.Close();
+      }
+    }
+  }
+}
